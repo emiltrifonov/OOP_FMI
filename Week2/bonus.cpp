@@ -46,7 +46,7 @@ int getMovieCount(std::ifstream& ifs) {
 
         constexpr size_t SIZE = 1024;
         char buff[SIZE];
-        ifs.getline(buff, size);
+        ifs.getline(buff, SIZE);
         result++;
     }
 
@@ -293,9 +293,9 @@ int main() {
         std::cout << "The average price is: " << safeAveragePrice.number << std::endl;
     }
 
-    SafeAnswer safePrice = getMoviePrice("movieCatalog.txt", "Black-bullet");
+    SafeAnswer safePrice = getMoviePrice("movieCatalog.txt", "Solo-Leveling");
     if (safePrice.error == ErrorInCatalog::no_error_occurred) {
-        std::cout << "The price for the Black bullet movies is: " << safePrice.number << std::endl;
+        std::cout << "The price for the Solo Leveling movies is: " << safePrice.number << std::endl;
     }
 
     ErrorInCatalog errorSorting = saveMoviesSorted("movieCatalog.txt", "movieCatalogSorted.txt");
