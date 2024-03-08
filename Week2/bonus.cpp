@@ -2,6 +2,10 @@
 #include<cstring>
 #include<fstream>
 
+namespace Constants {
+    const int INVALID_VALUE = -1;
+}
+
 enum class ErrorInCatalog {
     catalog_not_open,
     read_from_empty_catalog,
@@ -25,9 +29,10 @@ void setIfsToPos(std::ifstream& ifs, int pos) {
 }
 
 bool isCatalogEmpty(std::ifstream& ifs) {
-    int currPos = ifs.tellg();
+    const int currPos = ifs.tellg();
+
     ifs.seekg(0, std::ios::end);
-    int lastPos = ifs.tellg();
+    const int lastPos = ifs.tellg();
 
     setIfsToPos(ifs, currPos);
 
@@ -35,7 +40,7 @@ bool isCatalogEmpty(std::ifstream& ifs) {
 }
 
 int getMovieCount(std::ifstream& ifs) {
-    int currPos = ifs.tellg();
+    const int currPos = ifs.tellg();
     int result = 0;
 
     while (true)
@@ -71,21 +76,23 @@ SafeAnswer getNumberOfMovies(const char* catalogName) {
     std::ifstream ifs(catalogName);
     ErrorInCatalog noError = ErrorInCatalog::no_error_occurred;
 
+    int result = Constants::INVALID_VALUE;
+
     {
         ErrorInCatalog potentialError = checkForErrors(ifs);
 
         if (noError != potentialError) {
-            return { -1, potentialError };
+            return { result, potentialError };
         }
     }
 
-    int result = getMovieCount(ifs);
+    result = getMovieCount(ifs);
 
     return { result, noError };
 }
 
 double getAverageMoviePrice(std::ifstream& ifs) {
-    int currPos = ifs.tellg();
+    const int currPos = ifs.tellg();
     double result = 0;
     int movieCount = 0;
 
@@ -114,22 +121,24 @@ SafeAnswer averagePrice(const char* catalogName) {
     std::ifstream ifs(catalogName);
     ErrorInCatalog noError = ErrorInCatalog::no_error_occurred;
 
+    int result = Constants::INVALID_VALUE;
+
     {
         ErrorInCatalog potentialError = checkForErrors(ifs);
 
         if (noError != potentialError) {
-            return { -1, potentialError };
+            return { result, potentialError };
         }
     }
 
-    int result = getAverageMoviePrice(ifs);
+    result = getAverageMoviePrice(ifs);
 
     return { result, noError };
 }
 
 int getPriceOfMovie(std::ifstream& ifs, const char* movie) {
-    int currPos = ifs.tellg();
-    int result = -1;
+    const int currPos = ifs.tellg();
+    int resultNum = Constants::INVALID_VALUE;
 
     while (true)
     {
@@ -141,7 +150,7 @@ int getPriceOfMovie(std::ifstream& ifs, const char* movie) {
         char buff[SIZE];
         ifs >> buff;
         if (strcmp(buff, movie) == 0) {
-            ifs >> result;
+            ifs >> resultNum;
             break;
         }
         else {
@@ -151,28 +160,32 @@ int getPriceOfMovie(std::ifstream& ifs, const char* movie) {
 
     setIfsToPos(ifs, currPos);
 
-    return result;
+    return resultNum;
 }
 
 SafeAnswer getMoviePrice(const char* catalogName, const char* movieName) {
     std::ifstream ifs(catalogName);
     ErrorInCatalog noError = ErrorInCatalog::no_error_occurred;
 
+    int result = Constants::INVALID_VALUE;
+
     {
         ErrorInCatalog potentialError = checkForErrors(ifs);
 
         if (noError != potentialError) {
-            return { -1, potentialError };
+            return { result, potentialError };
         }
     }
 
-    int result = getPriceOfMovie(ifs, movieName);
+    result = getPriceOfMovie(ifs, movieName);
 
-    if (result < 0) {
-        noError = ErrorInCatalog::movie_not_in_catalog;
+    if (result == Constants::INVALID_VALUE) {
+        return { result, ErrorInCatalog::movie_not_in_catalog };
+    }
+    else {
+        return { result, noError };
     }
 
-    return { result, noError };
 }
 
 Movie readMovie(std::ifstream& ifs) { //добавете аргумент - файлов поток за четене
@@ -185,7 +198,7 @@ Movie readMovie(std::ifstream& ifs) { //добавете аргумент - фа
 }
 
 Movie* saveMoviesInArray(std::ifstream& ifs, int numberOfMovies) {
-    int currPos = ifs.tellg();
+    const int currPos = ifs.tellg();
     Movie* arr = new Movie[numberOfMovies];
 
     for (unsigned i = 0; i < numberOfMovies; i++)
@@ -226,13 +239,13 @@ void writeSortedMovies(std::ofstream& ofs, const Movie* arr, int moviesCount) {
     const char sep = ' ';
     for (unsigned i = 0; i < moviesCount; i++)
     {
-        ofs << arr[i].name << sep << arr[i].price << std::endl;
+        ofs << arr[i].name << sep << arr[i].price << '\n';
     }
 }
 
 ErrorInCatalog saveMoviesSorted(const char* catalogName, const char* catalogSortedName) {
-    // Ако файл, отворен с файлов поток за писане, не съществува, то той се създава 
-    // Първо намерете колко филма има във файла с име catalogName 
+    // Ако файл, отворен с файлов поток за писане, не съществува, то той се създава
+    // Първо намерете колко филма има във файла с име catalogName
     // след това продължете с имплементацията на функцията
     std::ifstream ifs(catalogName);
     ErrorInCatalog noError = ErrorInCatalog::no_error_occurred;
@@ -293,14 +306,14 @@ int main() {
         std::cout << "The average price is: " << safeAveragePrice.number << std::endl;
     }
 
-    SafeAnswer safePrice = getMoviePrice("movieCatalog.txt", "Solo-Leveling");
+    SafeAnswer safePrice = getMoviePrice("movieCatalog.txt", "FullMetal-Alchemist-Brotherhood");
     if (safePrice.error == ErrorInCatalog::no_error_occurred) {
-        std::cout << "The price for the Solo Leveling movies is: " << safePrice.number << std::endl;
+        std::cout << "The price for the FMAB movies is: " << safePrice.number << std::endl;
     }
 
     ErrorInCatalog errorSorting = saveMoviesSorted("movieCatalog.txt", "movieCatalogSorted.txt");
     if (errorSorting == ErrorInCatalog::no_error_occurred) {
-        std::cout << "Look the content of the movieCatalogSorted.txt file" << std::endl;
+        std::cout << "Look the content of the movieCatalogSorted.txt file" << std::endl << std::endl;
         printSortedMovies("movieCatalogSorted.txt");
     }
 }
