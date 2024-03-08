@@ -4,6 +4,7 @@
 
 namespace Constants {
     const int INVALID_VALUE = -1;
+    constexpr size_t BUFF_SIZE = 1024;
 }
 
 enum class ErrorInCatalog {
@@ -49,9 +50,8 @@ int getMovieCount(std::ifstream& ifs) {
             break;
         }
 
-        constexpr size_t SIZE = 1024;
-        char buff[SIZE];
-        ifs.getline(buff, SIZE);
+        char buff[Constants::BUFF_SIZE];
+        ifs.getline(buff, Constants::BUFF_SIZE);
         result++;
     }
 
@@ -60,7 +60,7 @@ int getMovieCount(std::ifstream& ifs) {
     return result;
 }
 
-ErrorInCatalog checkForErrors(std::ifstream& ifs) {
+ErrorInCatalog checkForStreamErrors(std::ifstream& ifs) {
     if (!ifs.is_open()) {
         return ErrorInCatalog::catalog_not_open;
     }
@@ -79,7 +79,7 @@ SafeAnswer getNumberOfMovies(const char* catalogName) {
     int result = Constants::INVALID_VALUE;
 
     {
-        ErrorInCatalog potentialError = checkForErrors(ifs);
+        ErrorInCatalog potentialError = checkForStreamErrors(ifs);
 
         if (noError != potentialError) {
             return { result, potentialError };
@@ -102,8 +102,7 @@ double getAverageMoviePrice(std::ifstream& ifs) {
             break;
         }
 
-        constexpr size_t SIZE = 1024;
-        char buff[SIZE];
+        char buff[Constants::BUFF_SIZE];
         int currentPrice;
         ifs >> buff >> currentPrice;
         result += currentPrice;
@@ -124,7 +123,7 @@ SafeAnswer averagePrice(const char* catalogName) {
     int result = Constants::INVALID_VALUE;
 
     {
-        ErrorInCatalog potentialError = checkForErrors(ifs);
+        ErrorInCatalog potentialError = checkForStreamErrors(ifs);
 
         if (noError != potentialError) {
             return { result, potentialError };
@@ -146,8 +145,7 @@ int getPriceOfMovie(std::ifstream& ifs, const char* movie) {
             break;
         }
 
-        constexpr size_t SIZE = 1024;
-        char buff[SIZE];
+        char buff[Constants::BUFF_SIZE];
         ifs >> buff;
         if (strcmp(buff, movie) == 0) {
             ifs >> resultNum;
@@ -170,8 +168,7 @@ SafeAnswer getMoviePrice(const char* catalogName, const char* movieName) {
     int result = Constants::INVALID_VALUE;
 
     {
-        ErrorInCatalog potentialError = checkForErrors(ifs);
-
+        ErrorInCatalog potentialError = checkForStreamErrors(ifs);
         if (noError != potentialError) {
             return { result, potentialError };
         }
@@ -216,10 +213,8 @@ void freeMoviesFromArray(Movie*& arr) { // добавете нужните ар�
     arr = nullptr;
 }
 
-
 void sortMoviesInArray(Movie* arr, size_t moviesCount) { // добавете нужните аргументи
     //Selection sort
-
     for (unsigned i = 0; i < moviesCount - 1; i++)
     {
         unsigned currMinIndex = i;
@@ -236,10 +231,10 @@ void sortMoviesInArray(Movie* arr, size_t moviesCount) { // добавете н�
 }
 
 void writeSortedMovies(std::ofstream& ofs, const Movie* arr, int moviesCount) {
-    const char sep = ' ';
+    const char SEP = ' ';
     for (unsigned i = 0; i < moviesCount; i++)
     {
-        ofs << arr[i].name << sep << arr[i].price << '\n';
+        ofs << arr[i].name << SEP << arr[i].price << '\n';
     }
 }
 
@@ -251,7 +246,7 @@ ErrorInCatalog saveMoviesSorted(const char* catalogName, const char* catalogSort
     ErrorInCatalog noError = ErrorInCatalog::no_error_occurred;
 
     {
-        ErrorInCatalog potentialError = checkForErrors(ifs);
+        ErrorInCatalog potentialError = checkForStreamErrors(ifs);
 
         if (noError != potentialError) {
             return potentialError;
@@ -276,7 +271,7 @@ void printSortedMovies(const char* catalogSortedName) {
     std::ifstream ifs(catalogSortedName);
 
     {
-        ErrorInCatalog potentialError = checkForErrors(ifs);
+        ErrorInCatalog potentialError = checkForStreamErrors(ifs);
 
         if (potentialError != ErrorInCatalog::no_error_occurred) {
             return;
@@ -289,9 +284,8 @@ void printSortedMovies(const char* catalogSortedName) {
             break;
         }
 
-        constexpr size_t SIZE = 1024;
-        char buff[SIZE];
-        ifs.getline(buff, SIZE);
+        char buff[Constants::BUFF_SIZE];
+        ifs.getline(buff, Constants::BUFF_SIZE);
         std::cout << buff << std::endl;
     }
 }
