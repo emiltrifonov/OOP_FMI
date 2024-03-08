@@ -270,8 +270,6 @@ void printSortedMovies(const char* catalogSortedName) {
         }
     }
 
-    int currPos = ifs.tellg();
-
     while (true)
     {
         if (ifs.eof()) {
@@ -283,8 +281,6 @@ void printSortedMovies(const char* catalogSortedName) {
         ifs.getline(buff, SIZE);
         std::cout << buff << std::endl;
     }
-
-    setIfsToPos(ifs, currPos);
 }
 
 int main() {
