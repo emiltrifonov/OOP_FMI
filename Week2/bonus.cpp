@@ -44,8 +44,9 @@ int getMovieCount(std::ifstream& ifs) {
             break;
         }
 
-        char buff[1024];
-        ifs.getline(buff, 1024);
+        constexpr size_t SIZE = 1024;
+        char buff[SIZE];
+        ifs.getline(buff, size);
         result++;
     }
 
@@ -94,7 +95,8 @@ double getAverageMoviePrice(std::ifstream& ifs) {
             break;
         }
 
-        char buff[1024];
+        constexpr size_t SIZE = 1024;
+        char buff[SIZE];
         int currentPrice;
         ifs >> buff >> currentPrice;
         result += currentPrice;
@@ -134,7 +136,9 @@ int getPriceOfMovie(std::ifstream& ifs, const char* movie) {
         if (ifs.eof()) {
             break;
         }
-        char buff[1024];
+
+        constexpr size_t SIZE = 1024;
+        char buff[SIZE];
         ifs >> buff;
         if (strcmp(buff, movie) == 0) {
             ifs >> result;
