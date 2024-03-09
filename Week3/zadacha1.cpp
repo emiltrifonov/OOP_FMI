@@ -3,8 +3,9 @@
 #include <sstream>
 
 namespace Constants {
-    const char rowSep = '|';
-    const char elemSep = ',';
+    const char ROW_SEP = '|';
+    const char ELEM_SEP = ',';
+    constexpr size_t BUFF_SIZE = 1024;
 }
 
 struct Row {
@@ -17,7 +18,13 @@ struct Matrix {
     Row* rows = nullptr;
 };
 
+void setIfsToPos(std::ifstream& ifs, int pos) {
+    ifs.clear();
+    ifs.seekg(pos);
+}
+
 void updateMatrixRowAndColCount(std::ifstream& ifs, int& rowsCount, int& colsCount) {
+    const int currPos = ifs.tellg();
     rowsCount = colsCount = 1;
 
     while (true)
@@ -27,23 +34,22 @@ void updateMatrixRowAndColCount(std::ifstream& ifs, int& rowsCount, int& colsCou
         }
 
         char ch = ifs.get();
-        if (ch == Constants::rowSep) {
+        if (ch == Constants::ROW_SEP) {
             rowsCount++;
         }
-        else if (ch == Constants::elemSep) {
+        else if (ch == Constants::ELEM_SEP) {
             if (rowsCount == 1) {
                 colsCount++;
             }
         }
     }
 
-    ifs.clear();
-    ifs.seekg(0);
+    setIfsToPos(ifs, currPos);
 }
 
 void initRowsAndCols(Matrix& m) {
     m.rows = new Row[m.rowsCount];
-    for (unsigned i = 0; i < m.colsCount; i++)
+    for (unsigned i = 0; i < m.rowsCount; i++)
     {
         m.rows[i].elements = new int[m.colsCount];
     }
@@ -79,8 +85,8 @@ void parseRow(Matrix& m, const char* buff, int rowIndex) {
 
     for (unsigned i = 0; i < m.colsCount; i++)
     {
-        char numBuff[16];
-        ss.getline(numBuff, 16, Constants::elemSep);
+        char numBuff[Constants::BUFF_SIZE];
+        ss.getline(numBuff, Constants::BUFF_SIZE, Constants::ELEM_SEP);
         m.rows[rowIndex].elements[i] = getNumFromStr(numBuff);
     }
 }
@@ -89,14 +95,15 @@ Matrix getMatrixFromFile(std::ifstream& ifs) {
     Matrix result;
     updateMatrixRowAndColCount(ifs, result.rowsCount, result.colsCount);
 
-    std::cout << "Matrix is " << result.rowsCount << "x" << result.colsCount << std::endl;
+    //std::cout << "Matrix is " << result.rowsCount << "x" << result.colsCount << std::endl;
 
     initRowsAndCols(result);
 
     for (unsigned i = 0; i < result.rowsCount; i++)
     {
-        char buff[1024];
-        ifs.getline(buff, 1024, Constants::rowSep);
+        char buff[Constants::BUFF_SIZE];
+        ifs.getline(buff, Constants::BUFF_SIZE, Constants::ROW_SEP);
+        //std::cout << "Current row: \"" << buff << "\"" << std::endl;
         //std::cout << buff << std::endl;
         parseRow(result, buff, i);
     }
@@ -104,12 +111,18 @@ Matrix getMatrixFromFile(std::ifstream& ifs) {
     return result;
 }
 
-void freeRows(Row* r) {
-    delete[] r;
+void freeRows(Row*& r) {
+    if (!r) {
+        delete[] r;
+        r = nullptr;
+    }
 }
 
-void freeCols(int* a) {
-    delete[] a;
+void freeCols(int*& a) {
+    if (!a) {
+        delete[] a;
+        a = nullptr;
+    }
 }
 
 void freeMatrix(Matrix& m) {
@@ -129,6 +142,62 @@ void printMatrix(Matrix& m) {
         }
         std::cout << std::endl;
     }
+    std::cout << std::endl;
+}
+
+bool canMatrixesBeMultiplied(const Matrix& first, const Matrix& second) {
+    return (first.colsCount == second.rowsCount);
+}
+
+Row getProductRow(const Matrix& first, const Matrix& second, int productRowInd, int productColCount) {
+    Row result;
+    result.elements = new int[productColCount];
+
+    for (unsigned i = 0; i < productColCount; i++)
+    {
+        int currentElement = 0;
+        for (unsigned j = 0; j < first.colsCount; j++)
+        {
+            currentElement += first.rows[productRowInd].elements[j] * second.rows[j].elements[i];
+        }
+        result.elements[i] = currentElement;
+    }
+
+    return result;
+}
+
+Matrix getProduct(const Matrix& first, const Matrix& second) {
+    Matrix result;
+    result.rowsCount = first.rowsCount;
+    result.colsCount = second.colsCount;
+    initRowsAndCols(result);
+
+    for (unsigned i = 0; i < result.rowsCount; i++)
+    {
+        result.rows[i] = getProductRow(first, second, i, result.colsCount);
+    }
+
+    return result;
+}
+
+void writeProductToFile(std::ofstream& ofs, const Matrix& product) {
+    if (!ofs.is_open()) {
+        return;
+    }
+
+    for (unsigned i = 0; i < product.rowsCount; i++)
+    {
+        for (unsigned j = 0; j < product.colsCount; j++)
+        {
+            ofs << product.rows[i].elements[j];
+            if (j != product.colsCount - 1) {
+                ofs << ',';
+            }
+        }
+        if (i != product.rowsCount - 1) {
+            ofs << '|';
+        }
+    }
 }
 
 void writeProductToFile(const char* file1, const char* file2, const char* fileRes) {
@@ -140,17 +209,32 @@ void writeProductToFile(const char* file1, const char* file2, const char* fileRe
     }
 
     Matrix matrix1 = getMatrixFromFile(ifs1);
-    Matrix matrix2 = getMatrixFromFile(ifs2);
-
-    std::cout << "M1 is " << matrix1.rowsCount << "x" << matrix1.colsCount << std::endl;
-    std::cout << "M1 is " << matrix2.rowsCount << "x" << matrix2.colsCount << std::endl;
-
     printMatrix(matrix1);
+    //3 3 3
+    //1 1 3
+    //3 3 1
+    Matrix matrix2 = getMatrixFromFile(ifs2);
     printMatrix(matrix2);
+    //1 2
+    //3 4
+    //5 6
+
+    if (!canMatrixesBeMultiplied(matrix1, matrix2)) {
+        return;
+    }
+
+    Matrix product = getProduct(matrix1, matrix2);
+    printMatrix(product);
+    //27 36
+    //19 24
+    //17 24
+
+    std::ofstream ofs(fileRes);
+    writeProductToFile(ofs, product);
 
     freeMatrix(matrix1);
     freeMatrix(matrix2);
-
+    freeMatrix(product);
     ifs1.close();
     ifs2.close();
 }
