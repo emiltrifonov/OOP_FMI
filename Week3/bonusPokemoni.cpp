@@ -27,7 +27,7 @@ enum class Type {
 struct Pokemon {
     char name[Constants::MAX_NAME_LEN];
     Type type;
-    unsigned short power;
+    unsigned int power;
 };
 
 struct PokemonHandler {
@@ -215,8 +215,9 @@ void sortPokemonsInFileByPower(const PokemonHandler& ph) {
     if (!ifs.is_open()) {
         return;
     }
-    int pokemonsCount = size(ph);
     ifs.seekg(0);
+    int pokemonsCount = size(ph);
+    
     for (unsigned i = 0; i < pokemonsCount - 1; i++)
     {
         unsigned currMaxInd = i;
@@ -237,7 +238,10 @@ void sortPokemonsInFileByPower(const PokemonHandler& ph) {
         if (currMaxInd != i) {
             swapPokemons(ph, i, currMaxInd);
         }
+
+        //printAllPokemons(ph);
     }
+    ifs.close();
 }
 
 PokemonHandler newPokemonHandler(const char* fileName) {
@@ -337,15 +341,13 @@ void textify(const PokemonHandler& ph, const char* fileName, int skipAtIndex = -
     for (unsigned i = 0; i < pokemonsCount; i++)
     {
         Pokemon temp = at(ph, i);
-        if (i == skipAtIndex) {
-
-        }
-        else {
+        std::cout << "Temporary pokemon: " << std::endl;
+        printPokemon(temp);
+        if (i != skipAtIndex) {
             writePokemonToTextFile(ofs, temp);
-        }
-
-        if (i != pokemonsCount - 1 && i != skipAtIndex) {
-            ofs << std::endl;
+            if (i != pokemonsCount - 1) {
+                ofs << std::endl;
+            }
         }
     }
 
@@ -371,6 +373,9 @@ Pokemon parseRow(const char* row) {
 
     ss >> result.power;
 
+    //std::cout << "nigga\n";
+    //printPokemon(result);
+
     return result;
 }
 
@@ -390,6 +395,9 @@ void untextify(const PokemonHandler& ph, const char* fileName) {
     }
 
     emptyBinaryFile(ph);
+    /*std::cout << "Empty pls" << std::endl;
+    printAllPokemons(ph);
+    std::cout << "---------------------" << std::endl;*/
 
     while (true)
     {
@@ -398,7 +406,7 @@ void untextify(const PokemonHandler& ph, const char* fileName) {
         }
 
         char buff[Constants::BUFF_SIZE];
-        ifs.getline(buff, Constants::BUFF_SIZE);
+        ifs.getline(buff, Constants::BUFF_SIZE,'\n');
         Pokemon temp = parseRow(buff);
         addPokemonToBinary(ph, temp);
     }
@@ -424,9 +432,11 @@ void readPokemonsFromConsole(const PokemonHandler& ph, const char* textFileName)
     {
         Pokemon p = getPokemonFromConsole();
         addPokemonToBinary(ph, p);
+        //printPokemon(p);
+        printAllPokemons(ph);
     }
 
-    sortPokemonsInFileByPower(ph);
+    //sortPokemonsInFileByPower(ph);
     textify(ph, textFileName);
 }
 
@@ -446,12 +456,15 @@ int main()
     const char textFileName[] = "pokemonDatabase.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
 
-    //printAllPokemons(ph);
+    untextify(ph, textFileName); //bachka
+
+    printAllPokemons(ph);
 
     /*deletePokemonDatabase(ph, textFileName);
     printAllPokemons(ph);*/
 
-    readPokemonsFromConsole(ph, textFileName);
+    //readPokemonsFromConsole(ph, textFileName);
+    //sortPokemonsInFileByPower(ph);
 
     //deletePokemonAt(ph, 7, textFileName);
 
