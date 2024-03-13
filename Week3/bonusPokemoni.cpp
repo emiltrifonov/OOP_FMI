@@ -37,6 +37,7 @@ struct PokemonHandler {
 void sortPokemonsInFileByPower(const PokemonHandler& ph);
 int size(const PokemonHandler& ph);
 void swapPokemons(const PokemonHandler& ph, int i, int j);
+void printAllPokemons(const PokemonHandler& ph);
 
 void resetCin() {
     std::cin.clear();
@@ -171,6 +172,7 @@ Pokemon getPokemonFromConsole() {
     Pokemon result{};
     setPokemonName(result);
     result.type = getPokemonType();
+    result.type = getPokemonType();
     result.power = getPokemonPower();
 
     return result;
@@ -185,6 +187,7 @@ void addPokemonToBinary(const PokemonHandler& ph, const Pokemon& pokemon) {
 
     ofs.write((const char*)&pokemon, sizeof(pokemon));
     ofs.close();
+    //printAllPokemons(ph);
 }
 
 void printPokemon(const Pokemon& pokemon) {
@@ -210,16 +213,16 @@ void printAllPokemons(const PokemonHandler& ph) {
     }
 }
 
+//broken
 void sortPokemonsInFileByPower(const PokemonHandler& ph) {
-    std::ifstream ifs(ph.binaryFileName, std::ios::binary);
-    if (!ifs.is_open()) {
-        return;
-    }
-    ifs.seekg(0);
     int pokemonsCount = size(ph);
     
     for (unsigned i = 0; i < pokemonsCount - 1; i++)
     {
+        std::ifstream ifs(ph.binaryFileName, std::ios::binary);
+        if (!ifs.is_open()) {
+            return;
+        }
         unsigned currMaxInd = i;
         for (unsigned j = i + 1; j < pokemonsCount; j++)
         {
@@ -234,14 +237,24 @@ void sortPokemonsInFileByPower(const PokemonHandler& ph) {
             if (pokI.power < pokJ.power) {
                 currMaxInd = j;
             }
+
+            /*std::cout << "Currently looking at pokemons:\n";
+            printPokemon(pokI);
+            std::cout << "and:\n";
+            printPokemon(pokJ);
+            std::cout << "\n";*/
+
+            ifs.clear();
+
+            //printAllPokemons(ph);
         }
+        ifs.close();
         if (currMaxInd != i) {
             swapPokemons(ph, i, currMaxInd);
         }
 
         //printAllPokemons(ph);
     }
-    ifs.close();
 }
 
 PokemonHandler newPokemonHandler(const char* fileName) {
@@ -253,7 +266,7 @@ PokemonHandler newPokemonHandler(const char* fileName) {
     strcpy_s(result.binaryFileName, fileName);
 
     if (size(result) > 0) {
-        sortPokemonsInFileByPower(result);
+        //sortPokemonsInFileByPower(result);
     }
 
     return result;
@@ -295,27 +308,48 @@ Pokemon at(const PokemonHandler& ph, int i) {
 }
 
 void swapPokemons(const PokemonHandler& ph, int i, int j) {
-    {
-        int pokemonsCount = size(ph);
-        if (i < 0 || i > pokemonsCount - 1 || j < 0 || j > pokemonsCount - 1 || i == j) {
-            return;
-        }
+    int pokemonsCount = size(ph);
+    if (i < 0 || i > pokemonsCount - 1 || j < 0 || j > pokemonsCount - 1 || i == j) {
+        return;
     }
 
     Pokemon pokI = at(ph, i);
     Pokemon pokJ = at(ph, j);
+    std::cout << "Currently looking at pokemons:\n";
+    printPokemon(pokI);
+    std::cout << "and:\n";
+    printPokemon(pokJ);
+    std::cout << "\n";
 
-    std::ofstream ofs(ph.binaryFileName, std::ios::binary | std::ios::ate);
-    if (!ofs.is_open()) {
-        return;
+    for (unsigned m = 0; m < pokemonsCount; m++)
+    {
+        Pokemon temp;
+        if (m == i) {
+            temp = at(ph, j);
+        }
+        else if (m == j) {
+            temp = at(ph, i);
+        }
+        else {
+            temp = at(ph, m);
+        }
+
+        std::cout << "Temp pokemon:\n";
+        printPokemon(temp);
+
+        std::fstream ofs(ph.binaryFileName, std::ios::out | std::ios::binary);
+        if (!ofs.is_open()) {
+            return;
+        }
+
+        ofs.write((const char*)&temp, sizeof(Pokemon));
+        ofs.close();
     }
 
-    ofs.seekp(i * sizeof(Pokemon));
-    ofs.write((const char*)&pokJ, sizeof(pokJ));
+    /*ofs.seekp(i * sizeof(Pokemon));
+    ofs.write((const char*)&pokJ, sizeof(Pokemon));
     ofs.seekp(j * sizeof(Pokemon));
-    ofs.write((const char*)&pokI, sizeof(pokI));
-
-    ofs.close();
+    ofs.write((const char*)&pokI, sizeof(Pokemon));*/
 }
 
 void insert(const PokemonHandler& ph, const Pokemon& pokemon) {
@@ -341,8 +375,9 @@ void textify(const PokemonHandler& ph, const char* fileName, int skipAtIndex = -
     for (unsigned i = 0; i < pokemonsCount; i++)
     {
         Pokemon temp = at(ph, i);
-        std::cout << "Temporary pokemon: " << std::endl;
-        printPokemon(temp);
+        //std::cout << "Temporary pokemon: " << std::endl;
+        //printPokemon(temp);
+        //printPokemon(temp);
         if (i != skipAtIndex) {
             writePokemonToTextFile(ofs, temp);
             if (i != pokemonsCount - 1) {
@@ -373,47 +408,12 @@ Pokemon parseRow(const char* row) {
 
     ss >> result.power;
 
-    //std::cout << "nigga\n";
-    //printPokemon(result);
-
     return result;
 }
 
 void emptyBinaryFile(const PokemonHandler& ph) {
-    std::ofstream ofs(ph.binaryFileName, std::ios::trunc);
-    ofs.close();
-}
-
-void untextify(const PokemonHandler& ph, const char* fileName) {
-    if (!fileName) {
-        return;
-    }
-
-    std::ifstream ifs(fileName);
-    if (!ifs.is_open()) {
-        return;
-    }
-
-    emptyBinaryFile(ph);
-    /*std::cout << "Empty pls" << std::endl;
-    printAllPokemons(ph);
-    std::cout << "---------------------" << std::endl;*/
-
-    while (true)
-    {
-        if (ifs.eof()) {
-            break;
-        }
-
-        char buff[Constants::BUFF_SIZE];
-        ifs.getline(buff, Constants::BUFF_SIZE,'\n');
-        Pokemon temp = parseRow(buff);
-        addPokemonToBinary(ph, temp);
-    }
-
-    ifs.close();
-
-    sortPokemonsInFileByPower(ph);
+    std::fstream fs(ph.binaryFileName, std::ios::binary | std::ios::trunc);
+    fs.close();
 }
 
 void readPokemonsFromConsole(const PokemonHandler& ph, const char* textFileName) {
@@ -440,6 +440,41 @@ void readPokemonsFromConsole(const PokemonHandler& ph, const char* textFileName)
     textify(ph, textFileName);
 }
 
+void untextify(const PokemonHandler& ph, const char* fileName) {
+    if (!fileName) {
+        return;
+    }
+
+    std::ifstream ifs(fileName);
+    if (!ifs.is_open()) {
+        return;
+    }
+
+    emptyBinaryFile(ph);
+    /*std::cout << "Empty pls" << std::endl;
+    printAllPokemons(ph);
+    std::cout << "---------------------" << std::endl;*/
+
+    while (true)
+    {
+        if (ifs.eof()) {
+            break;
+        }
+
+        char buff[Constants::BUFF_SIZE];
+        ifs.getline(buff, Constants::BUFF_SIZE, '\n');
+        Pokemon temp = parseRow(buff);
+        addPokemonToBinary(ph, temp);
+    }
+
+    ifs.close();
+
+    //printAllPokemons(ph);
+    //binary file is correct here
+
+    //sortPokemonsInFileByPower(ph);
+}
+
 void deletePokemonAt(const PokemonHandler& ph, int index, const char* textFileName) {
     textify(ph, textFileName, index);
     untextify(ph, textFileName);
@@ -456,19 +491,28 @@ int main()
     const char textFileName[] = "pokemonDatabase.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
 
-    untextify(ph, textFileName); //bachka
-
-    printAllPokemons(ph);
-
-    /*deletePokemonDatabase(ph, textFileName);
+    untextify(ph, textFileName);
+    //textify(ph, textFileName);
+    /*int pokemonsCount = size(ph);
+    std::cout << "Size of pokemon collection: " << pokemonsCount << std::endl;
+    std::cout << "Before sorting:\n\n";
     printAllPokemons(ph);*/
 
+    //deletePokemonDatabase(ph, textFileName);
+    printAllPokemons(ph);
+
+    //swapPokemons(ph, 2, 2);
+
+    //printAllPokemons(ph);
+
     //readPokemonsFromConsole(ph, textFileName);
+
     //sortPokemonsInFileByPower(ph);
 
     //deletePokemonAt(ph, 7, textFileName);
 
-    int pokemonsCount = size(ph);
+    /*pokemonsCount = size(ph);
     std::cout << "Size of pokemon collection: " << pokemonsCount << std::endl;
-    printAllPokemons(ph);
+    std::cout << "After sorting:\n\n";
+    printAllPokemons(ph);*/
 }
