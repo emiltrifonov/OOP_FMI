@@ -1,8 +1,5 @@
-Antonio Recio;3;740
-stoyan;5;550
-klimatik;7;500
-sewy;6;470
-Pessi;5;368
-Penaldo;3;345
-stoyan;1;78
-a;4;14
+b;2;22
+a;1;11
+c;5;54
+d;6;42
+e;7;17
