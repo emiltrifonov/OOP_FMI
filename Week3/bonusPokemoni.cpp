@@ -27,7 +27,7 @@ enum class Type {
 struct Pokemon {
     char name[Constants::MAX_NAME_LEN];
     Type type;
-    unsigned int power;
+    unsigned short power;
 };
 
 struct PokemonHandler {
@@ -117,7 +117,7 @@ Type getTypeFromNum(int num) {
 void setPokemonName(Pokemon& p) {
     std::cout << "Choose your pokemon's name(max. length 50): ";
     char buff[Constants::BUFF_SIZE];
-    while(true)
+    while (true)
     {
         std::cin.getline(buff, Constants::BUFF_SIZE);
         if (strlen(buff) > Constants::MAX_NAME_LEN)
@@ -135,7 +135,7 @@ void setPokemonName(Pokemon& p) {
 Type getPokemonType() {
     Type result;
 
-    unsigned short choice = USHRT_MAX;
+    unsigned short choice = 0;
 
     printPokemonTypes();
     std::cout << "Choose your pokemon's type(1 to 7): ";
@@ -185,8 +185,6 @@ void addPokemonToBinary(const PokemonHandler& ph, const Pokemon& pokemon) {
 
     ofs.write((const char*)&pokemon, sizeof(pokemon));
     ofs.close();
-
-    sortPokemonsInFileByPower(ph);
 }
 
 void printPokemon(const Pokemon& pokemon) {
@@ -213,25 +211,24 @@ void printAllPokemons(const PokemonHandler& ph) {
 }
 
 void sortPokemonsInFileByPower(const PokemonHandler& ph) {
-    std::fstream fstr(ph.binaryFileName, std::ios::in | std::ios::out | std::ios::binary | std::ios::ate);
-    if (!fstr.is_open()) {
+    std::ifstream ifs(ph.binaryFileName, std::ios::binary);
+    if (!ifs.is_open()) {
         return;
     }
     int pokemonsCount = size(ph);
-    fstr.seekg(0);
-    fstr.seekp(0);
+    ifs.seekg(0);
     for (unsigned i = 0; i < pokemonsCount - 1; i++)
     {
         unsigned currMaxInd = i;
         for (unsigned j = i + 1; j < pokemonsCount; j++)
         {
-            fstr.seekg(i * sizeof(Pokemon));
+            ifs.seekg(i * sizeof(Pokemon));
             Pokemon pokI;
-            fstr.read((char*)&pokI, sizeof(Pokemon));
+            ifs.read((char*)&pokI, sizeof(Pokemon));
 
-            fstr.seekg(j * sizeof(Pokemon));
+            ifs.seekg(j * sizeof(Pokemon));
             Pokemon pokJ;
-            fstr.read((char*)&pokJ, sizeof(Pokemon));
+            ifs.read((char*)&pokJ, sizeof(Pokemon));
 
             if (pokI.power < pokJ.power) {
                 currMaxInd = j;
@@ -274,7 +271,7 @@ int size(const PokemonHandler& ph) {
 
 Pokemon at(const PokemonHandler& ph, int i) {
     int pokemonsCount = size(ph);
-    
+
     Pokemon result = { "", Type::UNDEFINED, 0 };
 
     if (i < 0 || i > pokemonsCount - 1) {
@@ -304,7 +301,7 @@ void swapPokemons(const PokemonHandler& ph, int i, int j) {
     Pokemon pokI = at(ph, i);
     Pokemon pokJ = at(ph, j);
 
-    std::ofstream ofs(ph.binaryFileName, std::ios::binary || std::ios::ate);
+    std::ofstream ofs(ph.binaryFileName, std::ios::binary | std::ios::ate);
     if (!ofs.is_open()) {
         return;
     }
@@ -341,7 +338,7 @@ void textify(const PokemonHandler& ph, const char* fileName, int skipAtIndex = -
     {
         Pokemon temp = at(ph, i);
         if (i == skipAtIndex) {
-            
+
         }
         else {
             writePokemonToTextFile(ofs, temp);
@@ -420,7 +417,9 @@ void readPokemonsFromConsole(const PokemonHandler& ph, const char* textFileName)
     //pCount = 0;
     std::cout << "Choose how many pokemons to create: ";
     std::cin >> pCount;
-    resetCin();
+    if (pCount != 0) {
+        resetCin();
+    }
     for (unsigned short i = 0; i < pCount; i++)
     {
         Pokemon p = getPokemonFromConsole();
@@ -436,11 +435,21 @@ void deletePokemonAt(const PokemonHandler& ph, int index, const char* textFileNa
     untextify(ph, textFileName);
 }
 
+void deletePokemonDatabase(const PokemonHandler& ph, const char* textFileName) {
+    emptyBinaryFile(ph);
+    textify(ph, textFileName);
+}
+
 int main()
 {
     const char binaryFileName[] = "pokemonDatabase.dat";
     const char textFileName[] = "pokemonDatabase.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
+
+    //printAllPokemons(ph);
+
+    /*deletePokemonDatabase(ph, textFileName);
+    printAllPokemons(ph);*/
 
     readPokemonsFromConsole(ph, textFileName);
 
@@ -449,7 +458,4 @@ int main()
     int pokemonsCount = size(ph);
     std::cout << "Size of pokemon collection: " << pokemonsCount << std::endl;
     printAllPokemons(ph);
-
-    //textify(ph, textFileName);
-    //untextify(ph, textFileName);
 }
