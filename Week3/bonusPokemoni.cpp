@@ -27,7 +27,7 @@ enum class Type {
 };
 
 struct Pokemon {
-    char name[Constants::MAX_NAME_LEN];
+    char name[Constants::MAX_NAME_LEN + 1];
     Type type;
     unsigned power;
 };
@@ -217,15 +217,19 @@ void printPokemonIndexLine(unsigned index) {
 
 void printPokemon(const Pokemon& pokemon, unsigned index) {
     printPokemonIndexLine(index);
+
     std::cout << "Pokemon name: " << pokemon.name << std::endl;
+
     std::cout << "Pokemon type: ";
     printTypeFromNum((int)pokemon.type);
     std::cout << std::endl;
+
     std::cout << "Pokemon power: " << pokemon.power << std::endl;
 }
 
 void printAllPokemons(const PokemonHandler& ph) {
     const unsigned pokemonsCount = size(ph);
+
     std::ifstream ifs(ph.binaryFileName, std::ios::binary);
     if (!ifs.is_open()) {
         return;
@@ -241,6 +245,7 @@ void printAllPokemons(const PokemonHandler& ph) {
     {
         Pokemon temp;
         ifs.read((char*)&temp, sizeof(temp));
+
         printPokemon(temp, i);
     }
 
@@ -330,6 +335,7 @@ Pokemon at(const PokemonHandler& ph, int i) {
     if (!ifs.is_open()) {
         return result;
     }
+
     ifs.seekg(i * sizeof(Pokemon));
     ifs.read((char*)&result, sizeof(result));
 
@@ -405,6 +411,7 @@ unsigned getNumFromStr(const char* str) {
     if (!str) {
         return 0;
     }
+
     unsigned result = 0;
 
     while (*str)
@@ -447,6 +454,7 @@ void emptyFile(const char* fileName) {
     if (!fileName) {
         return;
     }
+
     std::ofstream ofs(fileName, std::ios::trunc);
     ofs.open(fileName);
     ofs.close();
@@ -525,6 +533,7 @@ void deletePokemonAt(const PokemonHandler& ph, int index, const char* textFileNa
     if (!textFileName) {
         return;
     }
+
     textify(ph, textFileName, index);
     untextify(ph, textFileName);
 }
@@ -578,12 +587,12 @@ void deletePokemonsFromConsole(const PokemonHandler& ph, const char* textFileNam
 
 int main()
 {
-    const char binaryFileName[] = "newPokemonDatabase.dat";
-    const char textFileName[] = "newPokemonDatabase.txt";
+    const char binaryFileName[] = "pokemoni.dat";
+    const char textFileName[] = "pokemoni.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
 
-    emptyFile(ph.binaryFileName);
-    textify(ph, textFileName);
+    //emptyFile(ph.binaryFileName);
+    //textify(ph, textFileName);
 
     //Sinhronizaciq za kogato si igraq s pokemonite v textoviq file
     //untextify(ph, textFileName);
