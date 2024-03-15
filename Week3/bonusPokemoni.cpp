@@ -596,13 +596,6 @@ int main()
     const char textFileName[] = "pokemoni.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
 
-    //emptyFile(ph.binaryFileName);
-    //textify(ph, textFileName);
-
-    //Sinhronizaciq za kogato si igraq s pokemonite v textoviq file
-    //untextify(ph, textFileName);
-    //textify(ph, textFileName);
-
     printAllPokemons(ph);
 
     readPokemonsFromConsole(ph, textFileName);
