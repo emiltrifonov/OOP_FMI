@@ -290,7 +290,7 @@ void sortPokemonsInFileByPower(const PokemonHandler& ph) {
 
 PokemonHandler newPokemonHandler(const char* fileName) {
     if (!fileName) {
-        assert(fileName);
+        exit(0);
     }
 
     //In case file doesn't exist
