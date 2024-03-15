@@ -140,10 +140,10 @@ Type getPokemonType() {
     unsigned choice = 0;
 
     printPokemonTypes();
-    std::cout << "Choose your pokemon's type(1 to 7): ";
 
     while (true)
     {
+        std::cout << "Choose your pokemon's type(1 to 7): ";
         std::cin >> choice;
         resetCin();
         if (choice >= Constants::MIN_ENUM_VALUE && choice <= Constants::MAX_ENUM_VALUE)
