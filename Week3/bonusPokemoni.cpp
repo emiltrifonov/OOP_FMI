@@ -252,7 +252,7 @@ void printAllPokemons(const PokemonHandler& ph) {
 void sortPokemonsInFileByPower(const PokemonHandler& ph) {
     const unsigned pokemonsCount = size(ph);//binary file stream o/c
     
-    for (unsigned i = 0; i < pokemonsCount - 1; i++)
+    for (unsigned i = 0; i < pokemonsCount; i++)
     {
         std::ifstream ifs(ph.binaryFileName, std::ios::binary);//binary file stream o
         if (!ifs.is_open()) {
@@ -262,15 +262,15 @@ void sortPokemonsInFileByPower(const PokemonHandler& ph) {
         unsigned currMaxInd = i;
         for (unsigned j = i + 1; j < pokemonsCount; j++)
         {
-            ifs.seekg(i * sizeof(Pokemon));
-            Pokemon pokI;
-            ifs.read((char*)&pokI, sizeof(Pokemon));
+            ifs.seekg(currMaxInd * sizeof(Pokemon));
+            Pokemon pokCurrMax;
+            ifs.read((char*)&pokCurrMax, sizeof(Pokemon));
 
             ifs.seekg(j * sizeof(Pokemon));
             Pokemon pokJ;
             ifs.read((char*)&pokJ, sizeof(Pokemon));
 
-            if (pokI.power < pokJ.power) {
+            if (pokCurrMax.power < pokJ.power) {
                 currMaxInd = j;
             }
         }
@@ -578,12 +578,12 @@ void deletePokemonsFromConsole(const PokemonHandler& ph, const char* textFileNam
 
 int main()
 {
-    const char binaryFileName[] = "pokemonDatabase.dat";
-    const char textFileName[] = "pokemonDatabase.txt";
+    const char binaryFileName[] = "newPokemonDatabase.dat";
+    const char textFileName[] = "newPokemonDatabase.txt";
     PokemonHandler ph = newPokemonHandler(binaryFileName);
 
-    //emptyFile(ph.binaryFileName);
-    //textify(ph, textFileName);
+    emptyFile(ph.binaryFileName);
+    textify(ph, textFileName);
 
     //Sinhronizaciq za kogato si igraq s pokemonite v textoviq file
     //untextify(ph, textFileName);
