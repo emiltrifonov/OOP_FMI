@@ -2,7 +2,6 @@
 #include <fstream>
 #include <cstring>
 #include <sstream>
-#include <cassert>
 
 namespace Constants {
     const unsigned MIN_POWER = 10;
