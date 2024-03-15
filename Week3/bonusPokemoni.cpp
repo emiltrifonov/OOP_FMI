@@ -8,14 +8,14 @@ namespace Constants {
     const unsigned MAX_POWER = 1000;
     const unsigned MAX_NAME_LEN = 50;
     const unsigned BUFF_SIZE = 1024;
-    const unsigned MIN_ENUM_VALUE = 1;
-    const unsigned MAX_ENUM_VALUE = 7;
+    const unsigned MIN_ENUM_VALUE = 0;
+    const unsigned MAX_ENUM_VALUE = 6;
     const unsigned INDEX_LINE_LEN = 25;
     const char SEP = ';';
 }
 
 enum class Type {
-    NORMAL = 1, //changed to 1 because std::cin converts invalid integer input to 0
+    NORMAL,
     FIRE,
     WATER,
     GRASS,
@@ -142,9 +142,15 @@ Type getPokemonType() {
 
     while (true)
     {
-        std::cout << "Choose your pokemon's type(1 to 7): ";
+        std::cout << "Choose your pokemon's type(0 to 6): ";
         std::cin >> choice;
+
+        if (std::cin.fail()) {
+            resetCin();
+            continue;
+        }
         resetCin();
+
         if (choice >= Constants::MIN_ENUM_VALUE && choice <= Constants::MAX_ENUM_VALUE)
         {
             result = getTypeFromNum(choice);
