@@ -4,7 +4,7 @@
 #include <cstring>
 #include <cmath>
 #include <cassert>
-//#pragma warning (disable : 4996)
+#pragma warning (disable : 4996)
 
 namespace Constants {
     constexpr size_t MAX_NAME_LEN = 64;
@@ -149,7 +149,7 @@ void Song::setName(const char* name) {
         return;
     }
     else {
-        strcpy_s(this->name, name);
+        strcpy(this->name, name);
     }
 }
 
