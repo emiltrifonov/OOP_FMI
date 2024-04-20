@@ -25,9 +25,9 @@ private:
 	void checkInjectiveness() const;
 	void checkSurjectiveness() const;
 
-	void drawHeaderFooter(short, short, short, short, short, char) const;
+	void drawHeaderFooter(short, short, short, short, char) const;
 	void drawRow(short, short, short) const;
-	void draw(short, short, short, short) const;
+	void draw(short, short) const;
 
 public:
 	MIF();
@@ -61,7 +61,7 @@ public:
 	// Operator ^ for repeated application
 	MIF operator^(ll) const;
 
-	// Reverse function generation ---> TODO
+	// Reverse function generation
 	MIF getReverse() const;
 
 	// Checks for injectiveness/surjectiveness/bijectiveness
@@ -72,18 +72,9 @@ public:
 	// Binary file serialization
 	void save(const char*) const;
 
-	// Drawing the function in a 20x20 area
+	// Drawing the function in a 20x20 area from (x;y) to (x+20;y+20)
 	void drawFrom(ll, ll) const;
-
-
-	void printInRange(ll smaller, ll bigger) const;
 };
-
-void tryValue(ll);
-bool isInRange(ll);
-unsigned getNumLen(int);
-void Nchars(short, char);
-int getIndex(int);
 
 MIF operator+(const MIF&, const MIF&);
 MIF operator-(const MIF&, const MIF&);
