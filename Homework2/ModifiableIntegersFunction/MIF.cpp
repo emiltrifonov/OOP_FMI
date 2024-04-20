@@ -1,8 +1,47 @@
 #include <iostream>
 #include <fstream>
+#include <exception>
 #include <cmath>
 #include "MIF.h"
 #include "StaticSet.h"
+#include "Exceptions.h"
+
+namespace Utility {
+	constexpr int DRAWING_RANGE = 20;
+
+	int getIndex(int ind) {
+		return ind >= 0 ? ind : -ind;
+	}
+
+	bool isInRange(ll arg) {
+		return (arg >= SHRT_MIN && arg <= SHRT_MAX);
+	}
+
+	void tryValue(ll value) {
+		if (!isInRange(value)) {
+			throw std::out_of_range(Exceptions::OUT_OF_RANGE_EXCEPTION);
+		}
+	}
+
+	unsigned getNumLen(int num) {
+		unsigned result = 1;
+
+		num = std::abs(num);
+
+		if (num > 9) {
+			result += log10(num);
+		}
+
+		return result;
+	}
+
+	void Nchars(short len, char ch) {
+		for (short i = 0; i < len; i++)
+		{
+			std::cout << ch;
+		}
+	}
+}
 
 MIF::MIF() = default;
 
@@ -14,7 +53,7 @@ MIF::MIF(ll (*function) (ll arg)) {
 
 		if (i < 0) {
 			// If value is outside of range, make function undefined for current argument
-			if (!isInRange(currentValue)) {
+			if (!Utility::isInRange(currentValue)) {
 				isUndefinedNegative.add(-i);
 			}
 			// Otherwise add the valid value
@@ -23,7 +62,7 @@ MIF::MIF(ll (*function) (ll arg)) {
 			}
 		}
 		else {
-			if (!isInRange(currentValue)) {
+			if (!Utility::isInRange(currentValue)) {
 				isUndefinedPositive.add(i);
 			}
 			else {
@@ -36,13 +75,13 @@ MIF::MIF(ll (*function) (ll arg)) {
 // positiveValues -> negativeValues -> isUndefinedPositve -> isUndefinedNegative
 MIF::MIF(const char* file) {
 	if (!file) {
-		throw std::exception("Invalid file name!");
+		throw std::exception(Exceptions::INVALID_FILENAME_EXCEPTION);
 	}
 
 	std::ifstream ifs(file, std::ios::binary);
 
 	if (!ifs.is_open()) {
-		throw std::exception("Cannot open file for reading!");
+		throw std::exception(Exceptions::CLOSED_FILE_EXCEPTION);
 	}
 
 	ifs.read((char*)positiveValues, sizeof(short) * (SHRT_MAX + 1));
@@ -54,17 +93,13 @@ MIF::MIF(const char* file) {
 	ifs.close();
 }
 
-int getIndex(int ind) {
-	return ind >= 0 ? ind : -ind;
-}
-
 void MIF::checkInjectiveness() const {
 	StaticSet posValues;
 	StaticSet negValues;
 
 	for (int i = SHRT_MIN; i <= SHRT_MAX; i++)
 	{
-		int index = getIndex(i);
+		int index = Utility::getIndex(i);
 
 		if (isUndefinedNegative.contains(index) || isUndefinedPositive.contains(index)) {
 			continue;
@@ -101,7 +136,7 @@ void MIF::checkSurjectiveness() const {
 
 	for (int i = SHRT_MIN; i <= SHRT_MAX; i++)
 	{
-		int index = getIndex(i);
+		int index = Utility::getIndex(i);
 
 		if (isUndefinedNegative.contains(index) || isUndefinedPositive.contains(index)) {
 			issurjective = -1;
@@ -134,21 +169,11 @@ void MIF::checkSurjectiveness() const {
 	isinjective = issurjective = 1;
 }
 
-bool isInRange(ll arg) {
-	return (arg >= SHRT_MIN && arg <= SHRT_MAX);
-}
-
-void tryValue(ll value) {
-	if (!isInRange(value)) {
-		throw std::exception("invalid value exception primerno");
-	}
-}
-
 void MIF::predefineAt(ll ind, ll newValue) {
-	tryValue(ind);
+	Utility::tryValue(ind);
 
 	if (ind >= 0) {
-		if (isInRange(newValue)) {
+		if (Utility::isInRange(newValue)) {
 			positiveValues[ind] = newValue;
 			isUndefinedPositive.remove(ind);
 			isinjective = issurjective = 0;
@@ -159,7 +184,7 @@ void MIF::predefineAt(ll ind, ll newValue) {
 		}
 	}
 	else {
-		if (isInRange(newValue)) {
+		if (Utility::isInRange(newValue)) {
 			negativeValues[-ind] = newValue;
 			isUndefinedNegative.remove(-ind);
 			isinjective = issurjective = 0;
@@ -172,7 +197,7 @@ void MIF::predefineAt(ll ind, ll newValue) {
 }
 
 void MIF::makeUndefinedAt(ll ind) {
-	tryValue(ind);
+	Utility::tryValue(ind);
 
 	if (ind >= 0) {
 		isUndefinedPositive.add(ind);
@@ -185,7 +210,7 @@ void MIF::makeUndefinedAt(ll ind) {
 }
 
 bool MIF::isDefinedAt(ll ind) const {
-	tryValue(ind);
+	Utility::tryValue(ind);
 
 	if (ind >= 0) {
 		return !isUndefinedPositive.contains(ind);
@@ -196,11 +221,11 @@ bool MIF::isDefinedAt(ll ind) const {
 }
 
 short MIF::operator()(ll arg) const {
-	tryValue(arg);
+	Utility::tryValue(arg);
 
 	if (arg >= 0) {
 		if (isUndefinedPositive.contains(arg)) {
-			throw std::exception("function undefined for given argument");
+			throw std::logic_error(Exceptions::UNDEFINED_FUNCTION_EXCEPTION);
 		}
 		else {
 			return positiveValues[arg];
@@ -208,7 +233,7 @@ short MIF::operator()(ll arg) const {
 	}
 	else {
 		if (isUndefinedNegative.contains(-arg)) {
-			throw std::exception("function undefined for given argument");
+			throw std::logic_error(Exceptions::UNDEFINED_FUNCTION_EXCEPTION);
 		}
 		else {
 			return negativeValues[-arg];
@@ -217,7 +242,7 @@ short MIF::operator()(ll arg) const {
 }
 
 bool MIF::compare(const MIF& other, bool(*pred)(short, short)) const {
-	//Check all values
+	//Compare all values
 	for (int i = SHRT_MIN; i <= SHRT_MAX; i++)
 	{
 		if (i < 0) {
@@ -288,7 +313,7 @@ MIF& MIF::applyOperation(const MIF& other, ll(*operation)(ll, ll)) {
 		if (i < 0) {
 			ll newValue = operation(this->negativeValues[-i], other.negativeValues[-i]);
 
-			if (!isInRange(newValue)) {
+			if (!Utility::isInRange(newValue)) {
 				this->isUndefinedNegative.add(-i);
 			}
 			else {
@@ -299,7 +324,7 @@ MIF& MIF::applyOperation(const MIF& other, ll(*operation)(ll, ll)) {
 		else {
 			ll newValue = operation(this->positiveValues[i], other.positiveValues[i]);
 
-			if (!isInRange(newValue)) {
+			if (!Utility::isInRange(newValue)) {
 				this->isUndefinedPositive.add(i);
 			}
 			else {
@@ -416,7 +441,7 @@ MIF MIF::operator()(const MIF& other) const {
 
 MIF MIF::operator^(ll power) const {
 	if (power < 1) {
-		throw std::exception("Invalid power");
+		throw std::exception(Exceptions::INVALID_POWER_EXCEPTION);
 	}
 	else {
 		MIF result = *this;
@@ -430,9 +455,9 @@ MIF MIF::operator^(ll power) const {
 	}
 }
 
-MIF MIF::getReverse() const { //getReverse ama drug put s taz biekciq
+MIF MIF::getReverse() const {
 	if (!this->isBijective()) {
-		throw std::exception("Cannot generate reverse function for a non-bijective function!");
+		throw std::exception(Exceptions::IRREVIRSIBLE_FUNCTION_EXCEPTION);
 	}
 
 	MIF result;
@@ -452,47 +477,26 @@ MIF MIF::getReverse() const { //getReverse ama drug put s taz biekciq
 	return result;
 }
 
-unsigned getNumLen(int num) {
-	unsigned result = 1;
-
-	num = std::abs(num);
-
-	if (num > 9) {
-		result += log10(num);
-	}
-
-	return result;
-}
-
-void Nchars(short len, char ch) {
-	for (short i = 0; i < len; i++)
-	{
-		std::cout << ch;
-	}
-}
-
-const int range = 20;
-
-void MIF::drawHeaderFooter(short leftX, short rightX, short Y, short indent, short spaceCount, char ch) const {
-	Nchars(spaceCount, ' ');
-	std::cout << "(" << leftX << ";" << Y << ") ";
-	Nchars(2 * range, ch);
-	std::cout << " (" << rightX << ";" << Y << ") " << std::endl;
+void MIF::drawHeaderFooter(short X, short Y, short indent, short spaceCount, char ch) const {
+	Utility::Nchars(spaceCount, ' ');
+	std::cout << "(" << X << ";" << Y << ") ";
+	Utility::Nchars(2 * Utility::DRAWING_RANGE, ch);
+	std::cout << " (" << X + 20 << ";" << Y << ") " << std::endl;
 }
 
 void MIF::drawRow(short indent, short x, short y) const {
-	Nchars(indent, ' ');
+	Utility::Nchars(indent, ' ');
 
 	std::cout << '|';
 
-	for (unsigned i = 0; i < range; i++)
+	for (unsigned i = 0; i < Utility::DRAWING_RANGE; i++)
 	{
 		if (x < 0) {
 			if (!isUndefinedNegative.contains(-x) && negativeValues[-x] == y) {
 				std::cout << "()";
 			}
 			else {
-				Nchars(2, ' ');
+				Utility::Nchars(2, ' ');
 			}
 		}
 		else {
@@ -500,7 +504,7 @@ void MIF::drawRow(short indent, short x, short y) const {
 				std::cout << "()";
 			}
 			else {
-				Nchars(2, ' ');
+				Utility::Nchars(2, ' ');
 			}
 		}
 
@@ -510,19 +514,19 @@ void MIF::drawRow(short indent, short x, short y) const {
 	std::cout << '|';
 }
 
-// The drawing will be 20 '|' in height and 40 '_' in width with every 2 '_' representing one point () in the plane
-void MIF::draw(short x, short x1, short y, short y1) const {
-	unsigned xLen = x > 0 ? getNumLen(x) : getNumLen(x) + 1;
-	unsigned x1Len = x1 > 0 ? getNumLen(x1) : getNumLen(x1) + 1;
-	unsigned yLen = y > 0 ? getNumLen(y) : getNumLen(y) + 1;
-	unsigned y1Len = y1 > 0 ? getNumLen(y1) : getNumLen(y1) + 1;
+// The drawing will be 20 '|' in height and 40 '_' in width with every 2 '_' representing one point ()
+void MIF::draw(short x, short y) const {
+	unsigned xLen = x > 0 ? Utility::getNumLen(x) : Utility::getNumLen(x) + 1;
+	unsigned yLen = y > 0 ? Utility::getNumLen(y) : Utility::getNumLen(y) + 1;
+	short y1 = y + 20;
+	unsigned y1Len = y1 > 0 ? Utility::getNumLen(y1) : Utility::getNumLen(y1) + 1;
 
 	unsigned indent = 1 + xLen + 1 + std::max(yLen, y1Len) + 1;
 
-	drawHeaderFooter(x, x1, y1, indent, indent - 1 - xLen - 1 - y1Len - 1, '_');
+	drawHeaderFooter(x, y1, indent, indent - 1 - xLen - 1 - y1Len - 1, '_');
 
 	short y1Copy = y1 - 1;
-	for (unsigned i = 0; i < range; i++)
+	for (unsigned i = 0; i < Utility::DRAWING_RANGE; i++)
 	{
 		drawRow(indent, x, y1Copy);
 		y1Copy--;
@@ -530,24 +534,25 @@ void MIF::draw(short x, short x1, short y, short y1) const {
 	}
 
 	// Last row of drawing
-	Nchars(indent, ' ');
+	Utility::Nchars(indent, ' ');
 	std::cout << '|';
-	Nchars(range * 2, '_');
+	Utility::Nchars(Utility::DRAWING_RANGE * 2, '_');
 	std::cout << '|' << std::endl;
 
-	drawHeaderFooter(x, x1, y, indent, indent - 1 - xLen - 1 - yLen - 1, ' ');
+	//										(   num    ;   num    )
+	drawHeaderFooter(x, y, indent, indent - 1 - xLen - 1 - yLen - 1, ' ');
 }
 
 void MIF::drawFrom(ll x, ll y) const {
-	tryValue(x);
-	tryValue(y);
+	Utility::tryValue(x);
+	Utility::tryValue(y);
 
-	if (x + range > SHRT_MAX || y + range > SHRT_MAX) {
-		throw std::exception("X and Y cannot be more than 32748");
+	if (x + Utility::DRAWING_RANGE > SHRT_MAX || y + Utility::DRAWING_RANGE > SHRT_MAX) {
+		throw std::exception(Exceptions::BIG_STARTING_COORDINATES_EXCEPTION);
 	}
 
 	std::cout << std::endl;
-	draw(x, x + range, y, y + range);
+	draw(x, y);
 
 	// f(x) = y drawing
 	// 
@@ -595,13 +600,13 @@ bool MIF::isBijective() const {
 // positiveValues -> negativeValues -> isUndefinedPositve -> isUndefinedNegative
 void MIF::save(const char* file) const {
 	if (!file) {
-		throw std::exception("Invalid file name!");
+		throw std::exception(Exceptions::INVALID_FILENAME_EXCEPTION);
 	}
 
 	std::ofstream ofs(file, std::ios::binary);
 
 	if (!ofs.is_open()) {
-		throw std::exception("Cannot open file for writing!");
+		throw std::exception(Exceptions::CLOSED_FILE_EXCEPTION);
 	}
 
 	ofs.write((const char*)positiveValues, sizeof(short) * (SHRT_MAX + 1));
@@ -611,32 +616,4 @@ void MIF::save(const char* file) const {
 	ofs.write((const char*)&isUndefinedNegative, sizeof(StaticSet));
 
 	ofs.close();
-}
-
-void MIF::printInRange(ll x1, ll x2) const {
-	constexpr char undef[] = "Undefined";
-
-	for (int i = x1; i <= x2; i++)
-	{
-		std::cout << "func(" << i << ") = ";
-
-		if (i < 0) {
-			if (isUndefinedNegative.contains(-i)) {
-				std::cout << undef;
-			}
-			else {
-				std::cout << negativeValues[-i];
-			}
-		}
-		else {
-			if (isUndefinedPositive.contains(i)) {
-				std::cout << undef;
-			}
-			else {
-				std::cout << positiveValues[i];
-			}
-		}
-
-		std::cout << std::endl;
-	}
 }
