@@ -5,6 +5,10 @@
 #include "MultiSet.h"
 #include "Exceptions.h"
 
+namespace Constants {
+	constexpr int BITS_IN_CHAR = 8;
+}
+
 void MultiSet::copyFrom(const MultiSet& other) {
 	maxNum = other.maxNum;
 	bitsUsedForStorage = other.bitsUsedForStorage;
@@ -12,7 +16,7 @@ void MultiSet::copyFrom(const MultiSet& other) {
 
 	storage = new (std::nothrow) char[storageLength + 1]; // +1 for '\0'
 	if (!storage) {
-		throw Exceptions::BAD_ALLOC_EXCEPTION;
+		throw std::bad_alloc();
 	}
 
 	for (unsigned i = 0; i < storageLength; i++)
@@ -42,21 +46,21 @@ MultiSet::MultiSet(int maxNum, int bitsUsedForStorage) {
 	if (maxNum <= 0) {
 		throw Exceptions::INVALID_MAX_NUM_EXCEPTION;
 	}
-	else if (bitsUsedForStorage < 1 || bitsUsedForStorage > 8) {
+	else if (bitsUsedForStorage < 1 || bitsUsedForStorage > Constants::BITS_IN_CHAR) {
 		throw Exceptions::INVALID_BIT_STORAGE_EXCEPTION;
 	}
 	else {
 		this->maxNum = maxNum;
 		this->bitsUsedForStorage = bitsUsedForStorage;
 
-		storageLength = (maxNum + 1) * bitsUsedForStorage / 8;
-		const bool hasRemainder = ((maxNum + 1) * bitsUsedForStorage) % 8 != 0;
+		storageLength = (maxNum + 1) * bitsUsedForStorage / Constants::BITS_IN_CHAR;
+		const bool hasRemainder = (((maxNum + 1) * bitsUsedForStorage) % Constants::BITS_IN_CHAR) != 0;
 
 		storageLength += hasRemainder;
 
 		storage = new (std::nothrow) char[storageLength + 1]; // +1 for '\0'
 		if (!storage) {
-			throw Exceptions::BAD_ALLOC_EXCEPTION;
+			throw std::bad_alloc();
 		}
 		else {
 			initStorage(storageLength);
@@ -86,12 +90,11 @@ MultiSet::MultiSet(const char* file) {
 
 	storage = new (std::nothrow) char[storageLength + 1]; // +1 for '\0'
 	if (!storage) {
-		throw Exceptions::BAD_ALLOC_EXCEPTION;
+		throw std::bad_alloc();
 	}
 	else {
 		ifs.read(storage, storageLength);
 	}
-
 
 	ifs.close();
 }
@@ -106,18 +109,16 @@ MultiSet& MultiSet::operator=(const MultiSet& other) {
 }
 
 int MultiSet::getStartingCellIndex(int num) const {
-	return ((num * bitsUsedForStorage) / 8);
+	return ((num * bitsUsedForStorage) / Constants::BITS_IN_CHAR);
 }
 
 int MultiSet::getStartingBitIndex(int num) const {
-	return ((num * bitsUsedForStorage) % 8);
+	return ((num * bitsUsedForStorage) % Constants::BITS_IN_CHAR);
 }
 
 void MultiSet::incrementCellAndBitIndex(int& cellIndex, int& bitIndex) const {
-	static const int maxBitIndex = 7;
-
 	bitIndex += 1;
-	if (bitIndex > maxBitIndex) {
+	if (bitIndex >= Constants::BITS_IN_CHAR) {
 		bitIndex = 0;
 		cellIndex++;
 	}
@@ -126,8 +127,7 @@ void MultiSet::incrementCellAndBitIndex(int& cellIndex, int& bitIndex) const {
 MultiSet& MultiSet::operator+=(int num) { // Will not do anything if number is already at max count
 	if (num < 0 || num > maxNum)
 	{
-		return *this;
-		//throw Exceptions::INVALID_NEW_NUMBER_EXCEPTION;
+		throw Exceptions::INVALID_NEW_NUMBER_EXCEPTION;
 	}
 
 	if (count(num) == (1 << bitsUsedForStorage) - 1) {
@@ -180,8 +180,8 @@ std::ostream& operator<<(std::ostream& os, const MultiSet& set) {
 	for (unsigned i = 0; i <= set.maxNum; i++)
 	{
 		const int currentCount = set.count(i);
-		if (currentCount) {
-			os << i << " - x" << set.count(i) << std::endl;
+		if (currentCount != 0) {
+			os << i << " - x" << currentCount << std::endl;
 		}
 	}
 
@@ -189,12 +189,11 @@ std::ostream& operator<<(std::ostream& os, const MultiSet& set) {
 }
 
 void MultiSet::printMemoryRepresentation() const {
-	const int bitsInChar = 8;
 
 	for (unsigned i = 0; i < storageLength; i++)
 	{
 		const char currChar = storage[i];
-		for (int i = bitsInChar - 1; i >= 0; i--)
+		for (int i = Constants::BITS_IN_CHAR - 1; i >= 0; i--)
 		{
 			const char bit = ((currChar) & (1 << i)) ? '1' : '0';
 			std::cout << bit;
@@ -221,33 +220,33 @@ void MultiSet::add(int num, int count) {
 	}
 }
 
-// Returns intersection of 2 MultiSets -> this ^ other = { x | x is in 'this' and x is in 'other' }
-MultiSet MultiSet::operator^(const MultiSet& other) const {
-	if (this == &other) {
-		return *this;
+// Returns intersection of 2 MultiSets -> this ^ other = { x | x is in 'first' and x is in 'second' }
+MultiSet operator^(const MultiSet& first, const MultiSet& second) {
+	if (&first == &second) {
+		return first;
 	}
 
-	const int maxNum = std::min(this->maxNum, other.maxNum);
-	const int bitsUsedForStorage = std::min(this->bitsUsedForStorage, other.bitsUsedForStorage);
+	const int maxNum = std::min(first.maxNum, second.maxNum);
+	const int bitsUsedForStorage = std::min(first.bitsUsedForStorage, second.bitsUsedForStorage);
 
 	MultiSet result(maxNum, bitsUsedForStorage);
 
 	for (unsigned i = 0; i <= maxNum; i++)
 	{
-		const int count = std::min(this->count(i), other.count(i));
+		const int count = std::min(first.count(i), second.count(i));
 		result.add(i, count);
 	}
 
 	return result;
 }
 
-// Returns set difference -> this / other = { x | x is in 'this' and x is not in 'other' }
-MultiSet MultiSet::operator/(const MultiSet& other) const {
-	MultiSet result(this->maxNum, this->bitsUsedForStorage);
+// Returns set difference -> this / other = { x | x is in 'first' and x is not in 'second' }
+MultiSet operator/(const MultiSet& first, const MultiSet& second) {
+	MultiSet result(first.maxNum, first.bitsUsedForStorage);
 
 	for (unsigned i = 0; i < result.maxNum; i++)
 	{
-		const int count = this->count(i) - other.count(i);
+		const int count = first.count(i) - second.count(i);
 		if (count > 0) {
 			result.add(i, count);
 		}
