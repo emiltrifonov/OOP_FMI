@@ -3,7 +3,7 @@
 
 class MultiSet {
 private:
-	// Will have length: [(maxNum * bitsUsedForStorage) / 8 + 1 <<if remainder != 0>> ]
+	// Will have length: [(maxNum * bitsUsedForStorage) / 8 ] + 1 if remainder != 0
 	char* storage = nullptr;
 	// Represents the actual length of the storage since it's initiated with '\0' as its elements and strlen() doesn't work
 	st storageLength = -1;
@@ -19,7 +19,6 @@ private:
 
 	int getStartingCellIndex(int) const;
 	int getStartingBitIndex(int) const;
-
 	void incrementCellAndBitIndex(int&, int&) const;
 
 	void add(int, int);
@@ -33,8 +32,10 @@ public:
 	MultiSet& operator=(const MultiSet&);
 	friend std::ostream& operator<<(std::ostream&, const MultiSet&);
 	MultiSet& operator+=(int);
-	MultiSet operator/(const MultiSet&) const;
-	MultiSet operator^(const MultiSet&) const;
+	// Set difference
+	friend MultiSet operator/(const MultiSet&, const MultiSet&);
+	// Intersection of sets
+	friend MultiSet operator^(const MultiSet&, const MultiSet&);
 
 	MultiSet getComplement() const;
 
