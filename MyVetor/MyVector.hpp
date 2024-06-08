@@ -6,7 +6,7 @@
 template<class T>
 class MyVector {
 public:
-	MyVector() = default;
+	MyVector();
 	MyVector(int);
 	MyVector(const MyVector&);
 	MyVector(MyVector&&);
@@ -42,12 +42,18 @@ private:
 };
 
 template<class T>
+MyVector<T>::MyVector() {
+	data = new T[capacity];
+}
+
+template<class T>
 MyVector<T>::MyVector(int cap) {
 	if (cap <= 0) {
 		throw std::logic_error("Vector must have a positive capacity!");
 	}
 
 	this->capacity = cap;
+	data = new T[capacity];
 }
 
 template<class T>
@@ -145,8 +151,8 @@ void MyVector<T>::clear()
 template<class T>
 T& MyVector<T>::operator[](int ind)
 {
-	if (ind < 0 && ind >= size) {
-		throw std::out_of_range();
+	if (ind < 0 || ind >= size) {
+		throw std::out_of_range("Index out of range");
 	}
 
 	return data[ind];
@@ -155,8 +161,8 @@ T& MyVector<T>::operator[](int ind)
 template<class T>
 const T& MyVector<T>::operator[](int ind) const
 {
-	if (ind < 0 && ind >= size) {
-		throw std::out_of_range();
+	if (ind < 0 || ind >= size) {
+		throw std::out_of_range("Index out of range");
 	}
 
 	return data[ind];
